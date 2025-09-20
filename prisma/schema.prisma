@@ -1,0 +1,147 @@
+// This is your Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  username      String   @unique
+  passwordHash  String
+  role          String   @default("USER")
+  twoFactorEnabled Boolean @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  nfts          NFT[]
+  sessions      Session[]
+  @@map("users")
+}
+
+model NFT {
+  id              String   @id @default(uuid())
+  tokenId         String   @unique
+  name            String
+  description     String?
+  imageUrl        String
+  co2Offset       Float    // tons of CO2
+  price           Float    // in EUR or ETH
+  currency        String   @default("ETH")
+  ownerId         String
+  owner           User     @relation(fields: [ownerId], references: [id])
+  status          String    @default("LISTED")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("nfts")
+}
+
+model Session {
+  id           String @id @default(uuid())
+  refreshToken String
+  userId       String
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+
+  @@map("sessions")
+}
+
+// Enums are not supported in SQLite, using strings instead
+
+model ClimateData {
+  id              String   @id @default(uuid())
+  source          String
+  timestamp       DateTime
+  co2Levels       Float
+  temperature     Float
+  humidity        Float
+  airQuality      Float
+  renewableEnergy Float
+  carbonCredits   Float
+  pricePerTon     Float
+  country         String
+  region          String
+  latitude        Float
+  longitude       Float
+  verified        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@map("climate_data")
+}
+
+model SecurityLog {
+  id          String   @id @default(uuid())
+  eventType   String
+  userId      String?
+  ipAddress   String
+  userAgent   String
+  details     String   // JSON string
+  timestamp   DateTime @default(now())
+
+  @@map("security_logs")
+}
+
+model Integration {
+  id                String    @id @default(uuid())
+  platformId        String    @unique
+  name              String
+  baseUrl           String
+  apiKey            String
+  isActive          Boolean   @default(true)
+  supportedFeatures String    // Comma-separated list
+  rateLimit         String    // JSON string
+  lastSync          DateTime?
+  lastTest          DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("integrations")
+}
+
+model CarbonPrice {
+  id        String   @id @default(uuid())
+  price     Float
+  currency  String
+  timestamp DateTime
+  source    String
+  createdAt DateTime @default(now())
+
+  @@map("carbon_prices")
+}
+
+model Risk {
+  id          String   @id @default(uuid())
+  type        String   // market, credit, operational, liquidity, regulatory, technology
+  level       String   // low, medium, high, critical
+  description String
+  probability Int      // 0-100
+  impact      Int      // 0-100
+  mitigation  String
+  status      String   // active, mitigated, resolved
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("risks")
+}
+
+model EconomicAnalysis {
+  id                String   @id @default(uuid())
+  period            String
+  revenue           Float
+  costs             Float
+  profit            Float
+  profitMargin      Float
+  carbonCreditsSold Int
+  averagePrice      Float
+  marketShare       Float
+  growthRate        Float
+  createdAt         DateTime @default(now())
+
+  @@map("economic_analyses")
+}

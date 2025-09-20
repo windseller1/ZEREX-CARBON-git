@@ -1,0 +1,25 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ],
+  "env": {
+    "DATABASE_URL": "file:./dev.db",
+    "NEXTAUTH_SECRET": "zyra-carbon-secret-key-2024",
+    "NEXTAUTH_URL": "https://zyra-carbon.vercel.app",
+    "NEXT_PUBLIC_ALCHEMY_KEY": "your-alchemy-key-here",
+    "NEXT_PUBLIC_IPFS_GATEWAY": "https://zyra-carbon.infura-ipfs.io",
+    "STRIPE_PUBLIC_KEY": "your-stripe-public-key",
+    "STRIPE_SECRET_KEY": "your-stripe-secret-key",
+    "STRIPE_WEBHOOK_SECRET": "your-stripe-webhook-secret"
+  }
+}
