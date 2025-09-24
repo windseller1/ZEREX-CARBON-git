@@ -1,0 +1,204 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  firstName String
+  lastName  String
+  phone     String?
+  avatar    String?
+  role      UserRole @default(USER)
+  isActive  Boolean  @default(true)
+  isVerified Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  wallets      Wallet[]
+  transactions Transaction[]
+  carbonCredits CarbonCredit[]
+  kycDocuments KycDocument[]
+  notifications Notification[]
+
+  @@map("users")
+}
+
+model Wallet {
+  id       String  @id @default(cuid())
+  userId   String
+  balance  Decimal @default(0) @db.Decimal(15, 2)
+  currency String  @default("USD")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@map("wallets")
+}
+
+model CarbonCredit {
+  id          String   @id @default(cuid())
+  projectId   String
+  projectName String
+  description String?
+  amount      Decimal  @db.Decimal(15, 2)
+  price       Decimal  @db.Decimal(15, 2)
+  status      CreditStatus @default(AVAILABLE)
+  type        CreditType
+  standard    String   // VCS, Gold Standard, etc.
+  vintage     Int      // Year
+  country     String
+  region      String?
+  methodology String?
+  co2Reduction Decimal @db.Decimal(15, 2)
+  ownerId     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  owner        User?         @relation(fields: [ownerId], references: [id])
+  transactions Transaction[]
+
+  @@map("carbon_credits")
+}
+
+model Transaction {
+  id            String        @id @default(cuid())
+  type          TransactionType
+  amount        Decimal       @db.Decimal(15, 2)
+  price         Decimal       @db.Decimal(15, 2)
+  total         Decimal       @db.Decimal(15, 2)
+  status        TransactionStatus @default(PENDING)
+  currency      String        @default("USD")
+  description   String?
+  reference     String?       @unique
+  metadata      Json?
+  userId        String
+  walletId      String
+  carbonCreditId String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id])
+  wallet       Wallet        @relation(fields: [walletId], references: [id])
+  carbonCredit CarbonCredit? @relation(fields: [carbonCreditId], references: [id])
+
+  @@map("transactions")
+}
+
+model KycDocument {
+  id          String      @id @default(cuid())
+  userId      String
+  type        DocumentType
+  status      DocumentStatus @default(PENDING)
+  documentUrl String
+  metadata    Json?
+  reviewedAt  DateTime?
+  reviewedBy  String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("kyc_documents")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model MarketPrice {
+  id        String   @id @default(cuid())
+  price     Decimal  @db.Decimal(15, 2)
+  change    Decimal  @db.Decimal(15, 2)
+  volume    Decimal  @db.Decimal(15, 2)
+  timestamp DateTime @default(now())
+
+  @@map("market_prices")
+}
+
+// Enums
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum CreditStatus {
+  AVAILABLE
+  SOLD
+  RETIRED
+  PENDING
+}
+
+enum CreditType {
+  FORESTRY
+  RENEWABLE_ENERGY
+  ENERGY_EFFICIENCY
+  WASTE_MANAGEMENT
+  TRANSPORTATION
+  AGRICULTURE
+}
+
+enum TransactionType {
+  BUY
+  SELL
+  TRANSFER
+  DEPOSIT
+  WITHDRAWAL
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum DocumentType {
+  PASSPORT
+  NATIONAL_ID
+  DRIVER_LICENSE
+  UTILITY_BILL
+  BANK_STATEMENT
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  TRANSACTION
+  PRICE_ALERT
+  SYSTEM
+  MARKETING
+}
